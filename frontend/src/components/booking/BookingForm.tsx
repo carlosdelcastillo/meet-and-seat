@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { TimePicker } from '../ui/TimePicker';
 import { useTranslation } from '../../i18n';
@@ -7,6 +7,9 @@ import { api } from '../../api/client';
 import type { Resource, User } from '../../types';
 import { todayStr } from '../../utils/dates';
 import { translateApiError } from '../../utils/apiErrors';
+
+const normalize = (s: string) =>
+  s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 interface BookingFormProps {
   resources: Resource[];
@@ -57,6 +60,9 @@ export function BookingForm({
   const defaultStart = editBooking ? editBooking.start_time.slice(0, 5) : (initialStartTime || '09:00');
   const defaultEnd = editBooking ? editBooking.end_time.slice(0, 5) : (initialStartTime ? addMinutes(initialStartTime, 60) : '19:00');
   const [resourceId, setResourceId] = useState(editBooking?.resource_id ?? initialResourceId);
+  const [resourceSearch, setResourceSearch] = useState('');
+  const [showResourceDropdown, setShowResourceDropdown] = useState(false);
+  const resourceDropdownRef = useRef<HTMLDivElement>(null);
   const [date, setDate] = useState(editBooking?.booking_date ?? (initialDate || todayStr()));
   const [startTime, setStartTime] = useState(defaultStart);
   const [endTime, setEndTime] = useState(defaultEnd);
@@ -71,6 +77,31 @@ export function BookingForm({
       api.get<User[]>('/users').then(setUsers).catch(() => {});
     }
   }, [isAdmin]);
+
+  // Initialize resourceSearch label when editing or when initialResourceId is pre-set
+  useEffect(() => {
+    if (resourceId) {
+      const r = resources.find(res => res.id === resourceId);
+      if (r) setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!showResourceDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (resourceDropdownRef.current && !resourceDropdownRef.current.contains(e.target as Node)) {
+        setShowResourceDropdown(false);
+        // Restore label if a resource is already selected
+        if (resourceId) {
+          const r = resources.find(res => res.id === resourceId);
+          if (r) setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showResourceDropdown, resourceId, resources, t]);
 
   const handleStartChange = (val: string) => {
     setStartTime(val);
@@ -115,14 +146,83 @@ export function BookingForm({
         {!isEdit && (
           <div className="input-group">
             <label>{t('booking.resource')}</label>
-            <select className="input" value={resourceId} onChange={e => setResourceId(e.target.value)} required>
-              <option value="">{t('booking.selectResource')}</option>
-              {resources.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.name} ({t(`booking.${r.resource_type}`)})
-                </option>
-              ))}
-            </select>
+            <div ref={resourceDropdownRef} style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className="input"
+                placeholder={t('booking.selectResource')}
+                value={resourceSearch}
+                onFocus={() => {
+                  setResourceSearch('');
+                  setShowResourceDropdown(true);
+                }}
+                onChange={e => {
+                  setResourceSearch(e.target.value);
+                  setShowResourceDropdown(true);
+                }}
+                autoComplete="off"
+                required={!resourceId}
+              />
+              {/* hidden input to satisfy required validation */}
+              <input type="hidden" value={resourceId} required />
+              {showResourceDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 100,
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  marginTop: '2px',
+                }}>
+                  {resources
+                    .filter(r => !resourceSearch || normalize(r.name).includes(normalize(resourceSearch)))
+                    .map(r => (
+                      <div
+                        key={r.id}
+                        role="option"
+                        aria-selected={r.id === resourceId}
+                        tabIndex={0}
+                        onMouseDown={() => {
+                          setResourceId(r.id);
+                          setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+                          setShowResourceDropdown(false);
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setResourceId(r.id);
+                            setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+                            setShowResourceDropdown(false);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          background: r.id === resourceId ? 'var(--color-hover)' : 'transparent',
+                          fontSize: '0.9rem',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-hover)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = r.id === resourceId ? 'var(--color-hover)' : 'transparent')}
+                      >
+                        <span style={{ fontWeight: 500 }}>{r.name}</span>
+                        <span style={{ color: 'var(--color-text-muted)', marginLeft: '6px', fontSize: '0.8rem' }}>
+                          {t(`booking.${r.resource_type}`)}
+                        </span>
+                      </div>
+                    ))}
+                  {resources.filter(r => !resourceSearch || normalize(r.name).includes(normalize(resourceSearch))).length === 0 && (
+                    <div style={{ padding: '8px 12px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                      {t('common.noResults')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

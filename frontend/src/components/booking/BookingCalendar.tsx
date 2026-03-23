@@ -11,6 +11,9 @@ import { getHolidaysForMonth, formatHoliday, type Holiday } from '../../utils/ho
 import { useHolidays } from '../../hooks/useHolidays';
 import type { Booking } from '../../types';
 
+const normalize = (s: string) =>
+  s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
 interface BookingCalendarProps {
   onNewBooking: (resourceId: string, date: string, hour?: number, minute?: number) => void;
   refreshKey?: number;
@@ -25,6 +28,7 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
   const [weekStart, setWeekStart] = useState(getMonday(todayStr()));
   const [selectedResource, setSelectedResource] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [nameFilter, setNameFilter] = useState<string>('');
   const [showMonthCal, setShowMonthCal] = useState(false);
   const [showHolidays, setShowHolidays] = useState(true);
   const monthCalRef = useRef<HTMLDivElement>(null);
@@ -60,8 +64,9 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
   }, [selectedDate, fetchByDate, refreshKey]);
 
   const filteredResources = resources.filter(r => {
-    if (typeFilter === 'all') return true;
-    return r.resource_type === typeFilter;
+    if (typeFilter !== 'all' && r.resource_type !== typeFilter) return false;
+    if (nameFilter && !normalize(r.name).includes(normalize(nameFilter))) return false;
+    return true;
   });
 
   const getBookingsForResource = useCallback((resourceId: string): Booking[] =>
@@ -121,6 +126,16 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
           <option value="room">{t('booking.rooms')}</option>
           <option value="desk">{t('booking.desks')}</option>
         </select>
+
+        {/* Name filter */}
+        <input
+          type="text"
+          className="input"
+          style={{ width: '200px' }}
+          placeholder={t('booking.filterResourceName')}
+          value={nameFilter}
+          onChange={e => setNameFilter(e.target.value)}
+        />
 
         {/* Holidays toggle */}
         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
