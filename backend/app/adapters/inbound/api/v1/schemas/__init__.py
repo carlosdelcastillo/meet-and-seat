@@ -1,9 +1,20 @@
 from __future__ import annotations
 
 from datetime import date, time
+from typing import Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
 
 
 class LoginRequest(BaseModel):

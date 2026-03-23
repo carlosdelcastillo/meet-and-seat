@@ -6,7 +6,7 @@ import { BookingTimeline } from './BookingTimeline';
 import { BookingCard } from './BookingCard';
 import { MonthCalendar } from './MonthCalendar';
 import { useTranslation } from '../../i18n';
-import { todayStr, getMonday, getWeekDays } from '../../utils/dates';
+import { todayStr, getMonday, getWeekDays, addDays } from '../../utils/dates';
 import { getHolidaysForMonth, formatHoliday, type Holiday } from '../../utils/holidays';
 import { useHolidays } from '../../hooks/useHolidays';
 import type { Booking } from '../../types';
@@ -70,17 +70,13 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
   );
 
   const prevWeek = () => {
-    const d = new Date(weekStart + 'T00:00:00');
-    d.setDate(d.getDate() - 7);
-    const newStart = d.toISOString().split('T')[0];
+    const newStart = addDays(weekStart, -7);
     setWeekStart(newStart);
     setSelectedDate(newStart);
   };
 
   const nextWeek = () => {
-    const d = new Date(weekStart + 'T00:00:00');
-    d.setDate(d.getDate() + 7);
-    const newStart = d.toISOString().split('T')[0];
+    const newStart = addDays(weekStart, 7);
     setWeekStart(newStart);
     setSelectedDate(newStart);
   };
@@ -133,7 +129,7 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
             checked={showHolidays}
             onChange={e => setShowHolidays(e.target.checked)}
           />
-          Festivos
+          {t('booking.holidays')}
         </label>
       </div>
 

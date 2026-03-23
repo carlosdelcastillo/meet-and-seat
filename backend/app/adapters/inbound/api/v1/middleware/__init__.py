@@ -10,7 +10,6 @@ from app.domain.exceptions import (
     BookingNotFoundError,
     BrandSettingsNotFoundError,
     DomainError,
-    DuplicateBookingError,
     InvalidCredentialsError,
     PermissionDeniedError,
     ResourceNotFoundError,
@@ -33,7 +32,6 @@ ERROR_MAP: dict[type, int] = {
     BookingNotFoundError: 404,
     BrandSettingsNotFoundError: 404,
     BookingConflictError: 409,
-    DuplicateBookingError: 409,
     UserAlreadyExistsError: 409,
     DomainError: 400,
 }

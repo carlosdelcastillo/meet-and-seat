@@ -1,3 +1,24 @@
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export type BookingSortBy = 'booking_date' | 'start_time' | 'created_at' | 'resource_name';
+
+export interface MyBookingsParams {
+  page?: number;
+  per_page?: number;
+  sort_by?: BookingSortBy;
+  sort_dir?: 'asc' | 'desc';
+  date_from?: string;
+  date_to?: string;
+  resource_type?: 'room' | 'desk';
+  resource_name?: string;
+}
+
 export interface User {
   id: string;
   email: string;

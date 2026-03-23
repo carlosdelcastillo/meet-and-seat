@@ -8,7 +8,6 @@ from app.domain.entities import Booking, BrandSettings, Resource, User
 from app.domain.exceptions import (
     BookingConflictError,
     BookingNotFoundError,
-    DuplicateBookingError,
     InvalidCredentialsError,
     PastDateError,
     PermissionDeniedError,
@@ -121,12 +120,6 @@ class CreateBookingHandler:
 
         # Admin can book on behalf of another user
         effective_user_id = command.for_user_id if command.for_user_id is not None else command.user_id
-
-        duplicate = await self._booking_repo.find_by_user_and_resource_and_date(
-            effective_user_id, command.resource_id, command.booking_date
-        )
-        if duplicate is not None:
-            raise DuplicateBookingError
 
         time_slot = TimeSlot(start=command.start_time, end=command.end_time)
         new_booking = Booking(

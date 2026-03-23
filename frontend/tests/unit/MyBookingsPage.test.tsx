@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MyBookingsPage } from '../../src/pages/MyBookingsPage';
 import { I18nContext } from '../../src/i18n';
@@ -37,6 +37,7 @@ vi.mock('../../src/hooks/useBookings', () => ({
     bookings: [mockBooking],
     loading: false,
     error: null,
+    paginatedMeta: { total: 1, page: 1, per_page: 20, total_pages: 1 },
     fetchMine: mockFetchMine,
     fetchByUser: mockFetchByUser,
     deleteBooking: vi.fn(),
@@ -96,5 +97,47 @@ describe('MyBookingsPage', () => {
   it('calls fetchMine on mount for regular user', () => {
     renderPage();
     expect(mockFetchMine).toHaveBeenCalled();
+  });
+
+  it('renders the resource name search input', () => {
+    renderPage();
+    const input = screen.getByPlaceholderText('booking.filterResourceName');
+    expect(input).toBeInTheDocument();
+  });
+
+  it('typing in resource name input calls fetchMine with resource_name param', async () => {
+    renderPage();
+    const input = screen.getByPlaceholderText('booking.filterResourceName');
+    fireEvent.change(input, { target: { value: 'Alpha' } });
+    await waitFor(() => {
+      const calls = mockFetchMine.mock.calls;
+      const lastCall = calls[calls.length - 1][0];
+      expect(lastCall).toMatchObject({ resource_name: 'Alpha', page: 1 });
+    });
+  });
+
+  it('clearing resource name input removes the filter', async () => {
+    renderPage();
+    const input = screen.getByPlaceholderText('booking.filterResourceName');
+    fireEvent.change(input, { target: { value: 'Alpha' } });
+    fireEvent.change(input, { target: { value: '' } });
+    await waitFor(() => {
+      const calls = mockFetchMine.mock.calls;
+      const lastCall = calls[calls.length - 1][0];
+      expect(lastCall.resource_name).toBeUndefined();
+    });
+  });
+
+  it('renders pagination controls when paginatedMeta is present', () => {
+    renderPage();
+    // prev/next buttons are rendered (keys mapping to 'common.prev' / 'common.next')
+    expect(screen.getByText(/common\.prev/)).toBeInTheDocument();
+    expect(screen.getByText(/common\.next/)).toBeInTheDocument();
+  });
+
+  it('prev button is disabled on page 1', () => {
+    renderPage();
+    const prevBtn = screen.getByText(/common\.prev/);
+    expect(prevBtn).toBeDisabled();
   });
 });

@@ -15,7 +15,11 @@
     "actions": "Accions",
     "back": "Tornar",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "clearFilters": "Netejar filtres",
+    "prev": "Anterior",
+    "next": "Següent",
+    "of": "de"
   },
   "auth": {
     "login": "Iniciar sessió",
@@ -67,7 +71,20 @@
     "selectResource": "Selecciona un recurs",
     "selectDate": "Selecciona una data",
     "available": "Disponible",
-    "occupied": "Ocupat"
+    "occupied": "Ocupat",
+    "holidays": "Festius",
+    "filterFrom": "Des de",
+    "filterTo": "Fins a",
+    "filterAll": "Tots els tipus",
+    "filterResourceName": "Cercar sala/lloc...",
+    "sortDate": "Data",
+    "sortTime": "Hora",
+    "sortResource": "Recurs",
+    "sortCreated": "Creació",
+    "sortAsc": "Ascendent",
+    "sortDesc": "Descendent",
+    "page": "Pàgina",
+    "totalResults": "resultats"
   },
   "dashboard": {
     "title": "Tauler de control",

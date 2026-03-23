@@ -34,11 +34,6 @@ class BookingConflictError(DomainError):
         super().__init__("Time slot conflicts with an existing booking")
 
 
-class DuplicateBookingError(DomainError):
-    def __init__(self) -> None:
-        super().__init__("User already has a booking for this resource on this date")
-
-
 class UserAlreadyExistsError(DomainError):
     def __init__(self, email: str = "") -> None:
         super().__init__(f"User already exists: {email}" if email else "User already exists")

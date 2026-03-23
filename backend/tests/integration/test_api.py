@@ -356,6 +356,189 @@ class TestUpdateBooking:
         assert response.status_code == 204
 
 
+class TestMyBookingsPagination:
+    """Integration tests for GET /bookings/mine and /bookings/user/{id} pagination and filters."""
+
+    async def _setup(self, client, admin_headers, auth_headers):
+        """Create two resources and two bookings for the authenticated user."""
+        from datetime import date, timedelta
+
+        res_a = await client.post(
+            "/api/v1/resources",
+            json={"name": "Alpha Room", "resource_type": "room"},
+            headers=admin_headers,
+        )
+        res_b = await client.post(
+            "/api/v1/resources",
+            json={"name": "Beta Desk", "resource_type": "desk"},
+            headers=admin_headers,
+        )
+        rid_a = res_a.json()["id"]
+        rid_b = res_b.json()["id"]
+
+        future = date.today() + timedelta(days=3)
+        further = date.today() + timedelta(days=10)
+
+        b1 = await client.post(
+            "/api/v1/bookings",
+            json={
+                "resource_id": rid_a,
+                "booking_date": str(future),
+                "start_time": "09:00:00",
+                "end_time": "10:00:00",
+                "purpose": "Meeting Alpha",
+            },
+            headers=auth_headers,
+        )
+        b2 = await client.post(
+            "/api/v1/bookings",
+            json={
+                "resource_id": rid_b,
+                "booking_date": str(further),
+                "start_time": "11:00:00",
+                "end_time": "12:00:00",
+                "purpose": "Meeting Beta",
+            },
+            headers=auth_headers,
+        )
+        return rid_a, rid_b, str(future), str(further), b1.json()["id"], b2.json()["id"]
+
+    async def test_mine_returns_paginated_envelope(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get("/api/v1/bookings/mine", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+        assert "page" in data
+        assert "per_page" in data
+        assert "total_pages" in data
+        assert len(data["items"]) >= 2
+
+    async def test_mine_filter_by_resource_type(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?resource_type=room", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(b["resource_type"] == "room" for b in data["items"])
+
+    async def test_mine_filter_by_resource_name(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?resource_name=alpha", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert all("Alpha" in b["resource_name"] for b in data["items"])
+
+    async def test_mine_filter_by_resource_name_partial(self, client, admin_headers, auth_headers):
+        """Partial, case-insensitive match on resource name."""
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?resource_name=BETA", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert all("Beta" in b["resource_name"] for b in data["items"])
+
+    async def test_mine_filter_by_resource_name_no_match(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?resource_name=xyzzy_nonexistent", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 0
+        assert data["items"] == []
+
+    async def test_mine_filter_by_date_range(self, client, admin_headers, auth_headers):
+        from datetime import date, timedelta
+
+        _, _, future, _, _, _ = await self._setup(client, admin_headers, auth_headers)
+        d_to = str(date.today() + timedelta(days=5))
+        response = await client.get(
+            f"/api/v1/bookings/mine?date_to={d_to}", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Only the booking within 5 days should be returned
+        assert all(b["booking_date"] <= d_to for b in data["items"])
+
+    async def test_mine_sort_by_resource_name_asc(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?sort_by=resource_name&sort_dir=asc", headers=auth_headers
+        )
+        assert response.status_code == 200
+        names = [b["resource_name"] for b in response.json()["items"]]
+        assert names == sorted(names)
+
+    async def test_mine_pagination_per_page(self, client, admin_headers, auth_headers):
+        await self._setup(client, admin_headers, auth_headers)
+        response = await client.get(
+            "/api/v1/bookings/mine?per_page=1&page=1", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 1
+        assert data["total"] >= 2
+        assert data["total_pages"] >= 2
+
+    async def test_admin_filter_user_bookings_by_resource_name(
+        self, client, admin_headers, auth_headers
+    ):
+        await self._setup(client, admin_headers, auth_headers)
+        users = await client.get("/api/v1/users", headers=admin_headers)
+        user = next(u for u in users.json() if u["email"] == "test@test.com")
+
+        response = await client.get(
+            f"/api/v1/bookings/user/{user['id']}?resource_name=alpha",
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert all("Alpha" in b["resource_name"] for b in data["items"])
+
+    async def test_admin_user_bookings_paginated_envelope(
+        self, client, admin_headers, auth_headers
+    ):
+        await self._setup(client, admin_headers, auth_headers)
+        users = await client.get("/api/v1/users", headers=admin_headers)
+        user = next(u for u in users.json() if u["email"] == "test@test.com")
+
+        response = await client.get(
+            f"/api/v1/bookings/user/{user['id']}", headers=admin_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+        assert data["total"] >= 2
+
+    async def test_mine_resource_name_combined_with_type(
+        self, client, admin_headers, auth_headers
+    ):
+        """resource_name + resource_type both applied simultaneously."""
+        await self._setup(client, admin_headers, auth_headers)
+        # "alpha" matches "Alpha Room" which is a room
+        response = await client.get(
+            "/api/v1/bookings/mine?resource_name=alpha&resource_type=room",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert all(
+            "Alpha" in b["resource_name"] and b["resource_type"] == "room"
+            for b in data["items"]
+        )
+
+
 def uuid4():
     import uuid
     return str(uuid.uuid4())

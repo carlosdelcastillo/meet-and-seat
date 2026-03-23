@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -74,3 +75,34 @@ class ListUsersHandler:
 
     async def handle(self) -> list[User]:
         return await self._user_repo.list_all()
+
+
+@dataclass
+class GetMyBookingsPaginatedQuery:
+    user_id: UUID
+    page: int = 1
+    per_page: int = 20
+    sort_by: str = "booking_date"
+    sort_dir: str = "desc"
+    date_from: date | None = None
+    date_to: date | None = None
+    resource_type: str | None = None
+    resource_name: str | None = None
+
+
+class GetMyBookingsPaginatedHandler:
+    def __init__(self, booking_repo: BookingRepository) -> None:
+        self._booking_repo = booking_repo
+
+    async def handle(self, query: GetMyBookingsPaginatedQuery) -> tuple[list[Booking], int]:
+        return await self._booking_repo.find_by_user_paginated(
+            user_id=query.user_id,
+            page=query.page,
+            per_page=query.per_page,
+            sort_by=query.sort_by,
+            sort_dir=query.sort_dir,
+            date_from=query.date_from,
+            date_to=query.date_to,
+            resource_type=query.resource_type,
+            resource_name=query.resource_name,
+        )

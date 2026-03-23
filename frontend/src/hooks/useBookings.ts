@@ -1,11 +1,19 @@
 import { useState, useCallback } from 'react';
 import { api } from '../api/client';
-import type { Booking } from '../types';
+import type { Booking, MyBookingsParams, PaginatedResponse } from '../types';
+
+export interface PaginatedMeta {
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
 
 export function useBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paginatedMeta, setPaginatedMeta] = useState<PaginatedMeta | null>(null);
 
   const fetchByDate = useCallback(async (date: string) => {
     try {
@@ -33,11 +41,29 @@ export function useBookings() {
     }
   }, []);
 
-  const fetchMine = useCallback(async () => {
+  const fetchMine = useCallback(async (params: MyBookingsParams = {}) => {
     try {
       setLoading(true);
-      const data = await api.get<Booking[]>('/bookings/mine');
-      setBookings(data);
+      const qs = new URLSearchParams();
+      if (params.page != null) qs.set('page', String(params.page));
+      if (params.per_page != null) qs.set('per_page', String(params.per_page));
+      if (params.sort_by) qs.set('sort_by', params.sort_by);
+      if (params.sort_dir) qs.set('sort_dir', params.sort_dir);
+      if (params.date_from) qs.set('date_from', params.date_from);
+      if (params.date_to) qs.set('date_to', params.date_to);
+      if (params.resource_type) qs.set('resource_type', params.resource_type);
+      if (params.resource_name) qs.set('resource_name', params.resource_name);
+      const qstr = qs.toString();
+      const data = await api.get<PaginatedResponse<Booking>>(
+        `/bookings/mine${qstr ? `?${qstr}` : ''}`
+      );
+      setBookings(data.items);
+      setPaginatedMeta({
+        total: data.total,
+        page: data.page,
+        per_page: data.per_page,
+        total_pages: data.total_pages,
+      });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bookings');
@@ -72,11 +98,29 @@ export function useBookings() {
     return result;
   }, []);
 
-  const fetchByUser = useCallback(async (userId: string) => {
+  const fetchByUser = useCallback(async (userId: string, params: MyBookingsParams = {}) => {
     try {
       setLoading(true);
-      const data = await api.get<Booking[]>(`/bookings/user/${userId}`);
-      setBookings(data);
+      const qs = new URLSearchParams();
+      if (params.page != null) qs.set('page', String(params.page));
+      if (params.per_page != null) qs.set('per_page', String(params.per_page));
+      if (params.sort_by) qs.set('sort_by', params.sort_by);
+      if (params.sort_dir) qs.set('sort_dir', params.sort_dir);
+      if (params.date_from) qs.set('date_from', params.date_from);
+      if (params.date_to) qs.set('date_to', params.date_to);
+      if (params.resource_type) qs.set('resource_type', params.resource_type);
+      if (params.resource_name) qs.set('resource_name', params.resource_name);
+      const qstr = qs.toString();
+      const data = await api.get<PaginatedResponse<Booking>>(
+        `/bookings/user/${userId}${qstr ? `?${qstr}` : ''}`
+      );
+      setBookings(data.items);
+      setPaginatedMeta({
+        total: data.total,
+        page: data.page,
+        per_page: data.per_page,
+        total_pages: data.total_pages,
+      });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bookings');
@@ -93,6 +137,7 @@ export function useBookings() {
     bookings,
     loading,
     error,
+    paginatedMeta,
     fetchByDate,
     fetchByResourceAndDate,
     fetchMine,

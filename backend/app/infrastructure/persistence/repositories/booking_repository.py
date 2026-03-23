@@ -3,14 +3,14 @@ from __future__ import annotations
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import contains_eager, joinedload
 
 from app.domain.entities import Booking
 from app.domain.ports import BookingRepository
 from app.domain.value_objects import ResourceType, TimeSlot
-from app.infrastructure.persistence.orm_models import BookingModel
+from app.infrastructure.persistence.orm_models import BookingModel, ResourceModel
 
 
 class SqlAlchemyBookingRepository(BookingRepository):
@@ -65,6 +65,86 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         return [self._to_domain(m) for m in result.unique().scalars().all()]
 
+    async def find_by_user(self, user_id: UUID) -> list[Booking]:
+        result = await self._session.execute(
+            self._query_with_joins()
+            .where(BookingModel.user_id == user_id)
+            .order_by(BookingModel.booking_date.desc(), BookingModel.start_time)
+        )
+        return [self._to_domain(m) for m in result.unique().scalars().all()]
+
+    async def find_by_user_paginated(
+        self,
+        user_id: UUID,
+        page: int,
+        per_page: int,
+        sort_by: str = "booking_date",
+        sort_dir: str = "desc",
+        date_from: date | None = None,
+        date_to: date | None = None,
+        resource_type: str | None = None,
+        resource_name: str | None = None,
+    ) -> tuple[list[Booking], int]:
+        _SORT = {
+            "booking_date": BookingModel.booking_date,
+            "start_time": BookingModel.start_time,
+            "created_at": BookingModel.created_at,
+            "resource_name": ResourceModel.name,
+        }
+
+        # Base query with explicit joins for eager-loading and ORDER BY support
+        base = (
+            select(BookingModel)
+            .outerjoin(BookingModel.resource)
+            .outerjoin(BookingModel.user)
+            .options(
+                contains_eager(BookingModel.resource),
+                contains_eager(BookingModel.user),
+            )
+            .where(BookingModel.user_id == user_id)
+        )
+        if date_from is not None:
+            base = base.where(BookingModel.booking_date >= date_from)
+        if date_to is not None:
+            base = base.where(BookingModel.booking_date <= date_to)
+        if resource_type is not None:
+            base = base.where(ResourceModel.resource_type == resource_type)
+        if resource_name is not None:
+            base = base.where(ResourceModel.name.ilike(f"%{resource_name}%"))
+
+        # Lean COUNT — no options/eager loads
+        count_stmt = (
+            select(func.count(BookingModel.id))
+            .where(BookingModel.user_id == user_id)
+        )
+        if date_from is not None:
+            count_stmt = count_stmt.where(BookingModel.booking_date >= date_from)
+        if date_to is not None:
+            count_stmt = count_stmt.where(BookingModel.booking_date <= date_to)
+        if resource_type is not None or resource_name is not None:
+            count_stmt = count_stmt.join(BookingModel.resource)
+        if resource_type is not None:
+            count_stmt = count_stmt.where(ResourceModel.resource_type == resource_type)
+        if resource_name is not None:
+            count_stmt = count_stmt.where(ResourceModel.name.ilike(f"%{resource_name}%"))
+        count_result = await self._session.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        sort_col = _SORT.get(sort_by, BookingModel.booking_date)
+        sort_expr = sort_col.asc() if sort_dir == "asc" else sort_col.desc()
+        data_result = await self._session.execute(
+            base.order_by(sort_expr).limit(per_page).offset((page - 1) * per_page)
+        )
+        return [self._to_domain(m) for m in data_result.unique().scalars().all()], total
+
+    async def find_by_date(self, booking_date: date) -> list[Booking]:
+        result = await self._session.execute(
+            self._query_with_joins()
+            .where(BookingModel.booking_date == booking_date)
+            .order_by(BookingModel.start_time)
+        )
+        return [self._to_domain(m) for m in result.unique().scalars().all()]
+
     async def find_by_user_and_resource_and_date(
         self, user_id: UUID, resource_id: UUID, booking_date: date
     ) -> Booking | None:
@@ -76,22 +156,6 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         model = result.unique().scalar_one_or_none()
         return self._to_domain(model) if model else None
-
-    async def find_by_user(self, user_id: UUID) -> list[Booking]:
-        result = await self._session.execute(
-            self._query_with_joins()
-            .where(BookingModel.user_id == user_id)
-            .order_by(BookingModel.booking_date.desc(), BookingModel.start_time)
-        )
-        return [self._to_domain(m) for m in result.unique().scalars().all()]
-
-    async def find_by_date(self, booking_date: date) -> list[Booking]:
-        result = await self._session.execute(
-            self._query_with_joins()
-            .where(BookingModel.booking_date == booking_date)
-            .order_by(BookingModel.start_time)
-        )
-        return [self._to_domain(m) for m in result.unique().scalars().all()]
 
     async def update(self, booking: Booking) -> Booking:
         result = await self._session.execute(

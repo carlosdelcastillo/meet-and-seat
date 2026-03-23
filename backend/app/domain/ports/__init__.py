@@ -63,6 +63,20 @@ class BookingRepository(ABC):
     async def find_by_user(self, user_id: UUID) -> list[Booking]: ...
 
     @abstractmethod
+    async def find_by_user_paginated(
+        self,
+        user_id: UUID,
+        page: int,
+        per_page: int,
+        sort_by: str = "booking_date",
+        sort_dir: str = "desc",
+        date_from: date | None = None,
+        date_to: date | None = None,
+        resource_type: str | None = None,
+        resource_name: str | None = None,
+    ) -> tuple[list[Booking], int]: ...
+
+    @abstractmethod
     async def find_by_date(self, booking_date: date) -> list[Booking]: ...
 
     @abstractmethod

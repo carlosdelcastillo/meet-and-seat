@@ -15,7 +15,11 @@
     "actions": "Acciones",
     "back": "Volver",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "clearFilters": "Limpiar filtros",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "of": "de"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -67,7 +71,20 @@
     "selectResource": "Selecciona un recurso",
     "selectDate": "Selecciona una fecha",
     "available": "Disponible",
-    "occupied": "Ocupado"
+    "occupied": "Ocupado",
+    "holidays": "Festivos",
+    "filterFrom": "Desde",
+    "filterTo": "Hasta",
+    "filterAll": "Todos",
+    "filterResourceName": "Buscar sala/puesto...",
+    "sortDate": "Fecha",
+    "sortTime": "Hora",
+    "sortResource": "Recurso",
+    "sortCreated": "Creación",
+    "sortAsc": "Ascendente",
+    "sortDesc": "Descendente",
+    "page": "Página",
+    "totalResults": "resultados"
   },
   "dashboard": {
     "title": "Panel de control",

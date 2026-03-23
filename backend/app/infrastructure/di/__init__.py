@@ -21,6 +21,7 @@ from app.application.queries import (
     GetBookingsByResourceAndDateHandler,
     GetBrandHandler,
     GetDashboardHandler,
+    GetMyBookingsPaginatedHandler,
     GetUserBookingsHandler,
     ListResourcesHandler,
     ListUsersHandler,
@@ -115,6 +116,12 @@ def get_bookings_by_resource_and_date_handler(session: AsyncSession) -> GetBooki
 
 def get_user_bookings_handler(session: AsyncSession) -> GetUserBookingsHandler:
     return GetUserBookingsHandler(
+        booking_repo=SqlAlchemyBookingRepository(session),
+    )
+
+
+def get_my_bookings_paginated_handler(session: AsyncSession) -> GetMyBookingsPaginatedHandler:
+    return GetMyBookingsPaginatedHandler(
         booking_repo=SqlAlchemyBookingRepository(session),
     )
 

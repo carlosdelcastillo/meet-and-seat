@@ -15,7 +15,11 @@
     "actions": "Actions",
     "back": "Back",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "clearFilters": "Clear filters",
+    "prev": "Previous",
+    "next": "Next",
+    "of": "of"
   },
   "auth": {
     "login": "Log in",
@@ -67,7 +71,20 @@
     "selectResource": "Select a resource",
     "selectDate": "Select a date",
     "available": "Available",
-    "occupied": "Occupied"
+    "occupied": "Occupied",
+    "holidays": "Public holidays",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterAll": "All types",
+    "filterResourceName": "Search room/desk...",
+    "sortDate": "Date",
+    "sortTime": "Time",
+    "sortResource": "Resource",
+    "sortCreated": "Created",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "page": "Page",
+    "totalResults": "results"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -1,6 +1,10 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, String, Time, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, String, Time, func
+
+# Shared ENUM types — defined here so main.py can create them with checkfirst=True
+user_role_enum = Enum("admin", "user", name="user_role", create_type=False)
+resource_type_enum = Enum("room", "desk", name="resource_type", create_type=False)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -16,7 +20,7 @@ class UserModel(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(Enum("admin", "user", name="user_role"), default="user", nullable=False)
+    role = Column(user_role_enum, default="user", nullable=False)
     department = Column(String(255), default="")
     locale = Column(String(10), default="es")
     theme = Column(String(10), default="system")
@@ -31,7 +35,7 @@ class ResourceModel(Base):
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
-    resource_type = Column(Enum("room", "desk", name="resource_type"), nullable=False)
+    resource_type = Column(resource_type_enum, nullable=False)
     description = Column(String(500), default="")
     capacity = Column(Integer, default=1)
     floor = Column(String(50), default="")
@@ -46,7 +50,6 @@ class ResourceModel(Base):
 class BookingModel(Base):
     __tablename__ = "bookings"
     __table_args__ = (
-        UniqueConstraint("resource_id", "user_id", "booking_date", name="uq_booking_resource_user_date"),
         # Composite indexes for the most common query patterns
         Index("ix_bookings_resource_date", "resource_id", "booking_date"),
         Index("ix_bookings_user_date", "user_id", "booking_date"),

@@ -6,14 +6,13 @@ import pytest
 
 from app.application.commands import CreateBookingCommand, CreateBookingHandler
 from app.domain.entities import Booking, Resource
-from app.domain.exceptions import BookingConflictError, DuplicateBookingError, PastDateError, ResourceNotFoundError
+from app.domain.exceptions import BookingConflictError, PastDateError, ResourceNotFoundError
 from app.domain.value_objects import ResourceType, TimeSlot
 
 
 @pytest.fixture
 def booking_repo():
     repo = AsyncMock()
-    repo.find_by_user_and_resource_and_date = AsyncMock(return_value=None)
     repo.find_by_resource_and_date = AsyncMock(return_value=[])
     repo.save = AsyncMock(side_effect=lambda b: b)
     return repo
@@ -73,25 +72,26 @@ class TestCreateBooking:
         with pytest.raises(ResourceNotFoundError):
             await handler.handle(cmd)
 
-    async def test_duplicate_booking(self, handler, booking_repo):
-        booking_repo.find_by_user_and_resource_and_date = AsyncMock(
-            return_value=Booking(
-                resource_id=uuid4(),
-                user_id=uuid4(),
-                booking_date=date.today(),
-                time_slot=TimeSlot(start=time(9, 0), end=time(10, 0)),
-            )
-        )
+    async def test_same_user_can_book_same_resource_non_overlapping(self, handler, booking_repo):
+        rid = uuid4()
+        uid = uuid4()
         future_date = date.today() + timedelta(days=1)
-        cmd = CreateBookingCommand(
-            resource_id=uuid4(),
-            user_id=uuid4(),
+        existing = Booking(
+            resource_id=rid,
+            user_id=uid,
             booking_date=future_date,
-            start_time=time(9, 0),
-            end_time=time(11, 0),
+            time_slot=TimeSlot(start=time(9, 0), end=time(11, 0)),
         )
-        with pytest.raises(DuplicateBookingError):
-            await handler.handle(cmd)
+        booking_repo.find_by_resource_and_date = AsyncMock(return_value=[existing])
+        cmd = CreateBookingCommand(
+            resource_id=rid,
+            user_id=uid,
+            booking_date=future_date,
+            start_time=time(11, 0),
+            end_time=time(13, 0),
+        )
+        result = await handler.handle(cmd)
+        assert result.time_slot.start == time(11, 0)
 
     async def test_conflict(self, handler, booking_repo):
         rid = uuid4()

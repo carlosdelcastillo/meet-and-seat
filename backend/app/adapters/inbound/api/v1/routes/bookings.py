@@ -1,18 +1,25 @@
 from datetime import date
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.v1.middleware import CurrentUser, domain_exception_to_http, get_current_user
 from app.adapters.inbound.api.v1.middleware import require_admin
-from app.adapters.inbound.api.v1.schemas import BookingResponse, CreateBookingRequest, UpdateBookingRequest
+from app.adapters.inbound.api.v1.schemas import (
+    BookingResponse,
+    CreateBookingRequest,
+    PaginatedResponse,
+    UpdateBookingRequest,
+)
 from app.application.commands import (
     CreateBookingCommand,
     DeleteBookingCommand,
     DeleteUserBookingsCommand,
     UpdateBookingCommand,
 )
+from app.application.queries import GetMyBookingsPaginatedQuery
 from app.domain.exceptions import DomainError
 from app.infrastructure.di import (
     get_bookings_by_date_handler,
@@ -20,8 +27,8 @@ from app.infrastructure.di import (
     get_create_booking_handler,
     get_delete_booking_handler,
     get_delete_user_bookings_handler,
+    get_my_bookings_paginated_handler,
     get_update_booking_handler,
-    get_user_bookings_handler,
     get_user_bookings_by_user_handler,
 )
 from app.infrastructure.persistence.database import get_db
@@ -80,14 +87,43 @@ async def create_booking(
         raise domain_exception_to_http(e) from e
 
 
-@router.get("/mine", response_model=list[BookingResponse])
+@router.get("/mine", response_model=PaginatedResponse[BookingResponse])
 async def my_bookings(
+    page: Annotated[int, Query(ge=1)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort_by: Annotated[
+        Literal["booking_date", "start_time", "created_at", "resource_name"],
+        Query(),
+    ] = "booking_date",
+    sort_dir: Annotated[Literal["asc", "desc"], Query()] = "desc",
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
+    resource_type: Annotated[Literal["room", "desk"] | None, Query()] = None,
+    resource_name: Annotated[str | None, Query(max_length=100)] = None,
     current_user: CurrentUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
-    handler = get_user_bookings_handler(session)
-    bookings = await handler.handle(current_user.user_id)
-    return [_booking_response(b) for b in bookings]
+    handler = get_my_bookings_paginated_handler(session)
+    bookings, total = await handler.handle(
+        GetMyBookingsPaginatedQuery(
+            user_id=current_user.user_id,
+            page=page,
+            per_page=per_page,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            date_from=date_from,
+            date_to=date_to,
+            resource_type=resource_type,
+            resource_name=resource_name,
+        )
+    )
+    return PaginatedResponse(
+        items=[_booking_response(b) for b in bookings],
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=max(1, (total + per_page - 1) // per_page),
+    )
 
 
 @router.get("/date/{booking_date}", response_model=list[BookingResponse])
@@ -138,15 +174,44 @@ async def update_booking(
         raise domain_exception_to_http(e) from e
 
 
-@router.get("/user/{user_id}", response_model=list[BookingResponse])
+@router.get("/user/{user_id}", response_model=PaginatedResponse[BookingResponse])
 async def bookings_by_user(
     user_id: UUID,
+    page: Annotated[int, Query(ge=1)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort_by: Annotated[
+        Literal["booking_date", "start_time", "created_at", "resource_name"],
+        Query(),
+    ] = "booking_date",
+    sort_dir: Annotated[Literal["asc", "desc"], Query()] = "desc",
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
+    resource_type: Annotated[Literal["room", "desk"] | None, Query()] = None,
+    resource_name: Annotated[str | None, Query(max_length=100)] = None,
     _admin: CurrentUser = Depends(require_admin),
     session: AsyncSession = Depends(get_db),
 ):
-    handler = get_user_bookings_by_user_handler(session)
-    bookings = await handler.handle(user_id)
-    return [_booking_response(b) for b in bookings]
+    handler = get_my_bookings_paginated_handler(session)
+    bookings, total = await handler.handle(
+        GetMyBookingsPaginatedQuery(
+            user_id=user_id,
+            page=page,
+            per_page=per_page,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            date_from=date_from,
+            date_to=date_to,
+            resource_type=resource_type,
+            resource_name=resource_name,
+        )
+    )
+    return PaginatedResponse(
+        items=[_booking_response(b) for b in bookings],
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=max(1, (total + per_page - 1) // per_page),
+    )
 
 
 @router.delete("/user/{user_id}", status_code=204)
