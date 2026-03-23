@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-meetandseat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-meetandseat}
+      POSTGRES_DB: ${POSTGRES_DB:-meetandseat}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-meetandseat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      MAS_DATABASE_URL: ${MAS_DATABASE_URL:-postgresql+asyncpg://meetandseat:meetandseat@db:5432/meetandseat}
+      MAS_SECRET_KEY: ${MAS_SECRET_KEY:-dev-secret-change-me}
+      MAS_CORS_ORIGINS: ${MAS_CORS_ORIGINS:-http://localhost}
+      MAS_WORKERS: ${MAS_WORKERS:-2}
+      MAS_LOG_LEVEL: ${MAS_LOG_LEVEL:-info}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
+    ports:
+      - "80:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

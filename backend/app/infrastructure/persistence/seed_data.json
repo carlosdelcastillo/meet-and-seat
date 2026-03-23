@@ -1,0 +1,42 @@
+{
+  "admin": {
+    "email": "admin@meetandseat.com",
+    "full_name": "Admin User",
+    "password": "Admin123!",
+    "department": "IT"
+  },
+  "users": [
+    { "full_name": "Ana García",       "email": "ana.garcia@meetandseat.com",      "department": "Marketing"    },
+    { "full_name": "Carlos López",     "email": "carlos.lopez@meetandseat.com",    "department": "Engineering"  },
+    { "full_name": "María Fernández",  "email": "maria.fernandez@meetandseat.com", "department": "Design"       },
+    { "full_name": "Pedro Martínez",   "email": "pedro.martinez@meetandseat.com",  "department": "Sales"        },
+    { "full_name": "Laura Sánchez",    "email": "laura.sanchez@meetandseat.com",   "department": "HR"           }
+  ],
+  "users_password": "User123!",
+  "rooms": [
+    { "name": "Sala Gaudí",    "description": "Sala de reuniones principal", "capacity": 12, "floor": "1", "amenities": "Proyector, Pizarra, Videoconferencia" },
+    { "name": "Sala Miró",     "description": "Sala mediana",                "capacity":  8, "floor": "1", "amenities": "Proyector, Pizarra"                  },
+    { "name": "Sala Dalí",     "description": "Sala pequeña",                "capacity":  4, "floor": "2", "amenities": "Pantalla TV"                         },
+    { "name": "Sala Picasso",  "description": "Sala grande",                 "capacity": 20, "floor": "2", "amenities": "Proyector, Sonido, Videoconferencia"  },
+    { "name": "Sala Tàpies",   "description": "Sala de brainstorming",       "capacity":  6, "floor": "3", "amenities": "Pizarra, Post-its"                   }
+  ],
+  "desks": [
+    { "name": "Puesto A1", "zone": "Zona A", "floor": "1", "equipment": "Monitor doble, Dock USB-C"    },
+    { "name": "Puesto A2", "zone": "Zona A", "floor": "1", "equipment": "Monitor doble, Dock USB-C"    },
+    { "name": "Puesto B1", "zone": "Zona B", "floor": "2", "equipment": "Monitor ultrawide"             },
+    { "name": "Puesto B2", "zone": "Zona B", "floor": "2", "equipment": "Monitor ultrawide"             },
+    { "name": "Puesto C1", "zone": "Zona C", "floor": "3", "equipment": "Monitor, Teclado mecánico"    },
+    { "name": "Puesto C2", "zone": "Zona C", "floor": "3", "equipment": "Monitor, Teclado mecánico"    }
+  ],
+  "brand": {
+    "company_name": "Meet & Seat",
+    "logo_url": "",
+    "primary_color": "#0F766E",
+    "accent_color": "#2DD4BF"
+  },
+  "booking_purposes": [
+    "Daily standup", "Sprint planning", "Diseño UX review",
+    "Entrevista candidato", "Formación equipo", "Trabajo concentrado",
+    "1:1 con manager", "Demo cliente", "Retrospectiva", "Sesión brainstorming"
+  ]
+}
