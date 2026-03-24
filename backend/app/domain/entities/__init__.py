@@ -19,6 +19,7 @@ class User:
     is_active: bool = True
     id: UUID = field(default_factory=uuid4)
     created_at: datetime | None = None
+    calendar_token: str | None = None
 
     @property
     def is_admin(self) -> bool:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from datetime import date, time
 from uuid import UUID
@@ -441,3 +442,54 @@ class DeleteUserBookingsHandler:
 
     async def handle(self, command: DeleteUserBookingsCommand) -> None:
         await self._booking_repo.delete_by_user(command.user_id)
+
+
+@dataclass
+class GenerateCalendarTokenCommand:
+    user_id: UUID
+
+
+class GenerateCalendarTokenHandler:
+    def __init__(self, user_repo: UserRepository) -> None:
+        self._user_repo = user_repo
+
+    async def handle(self, command: GenerateCalendarTokenCommand) -> User:
+        user = await self._user_repo.find_by_id(command.user_id)
+        if user is None:
+            raise UserNotFoundError(str(command.user_id))
+        user.calendar_token = secrets.token_urlsafe(32)
+        return await self._user_repo.update(user)
+
+
+@dataclass
+class UpdateMyProfileCommand:
+    user_id: UUID
+    full_name: str | None = None
+    department: str | None = None
+    current_password: str | None = None
+    new_password: str | None = None
+
+
+class UpdateMyProfileHandler:
+    def __init__(self, user_repo: UserRepository, password_hasher: PasswordHasher) -> None:
+        self._user_repo = user_repo
+        self._password_hasher = password_hasher
+
+    async def handle(self, command: UpdateMyProfileCommand) -> User:
+        user = await self._user_repo.find_by_id(command.user_id)
+        if user is None:
+            raise UserNotFoundError(str(command.user_id))
+
+        if command.new_password:
+            if not command.current_password or not self._password_hasher.verify(
+                command.current_password, user.hashed_password
+            ):
+                raise PermissionDeniedError("Current password is incorrect")
+            user.hashed_password = self._password_hasher.hash(command.new_password)
+
+        if command.full_name is not None:
+            user.full_name = command.full_name
+        if command.department is not None:
+            user.department = command.department
+
+        return await self._user_repo.update(user)

@@ -6,14 +6,16 @@ from app.adapters.inbound.api.v1.schemas import (
     AuthResponse,
     LoginRequest,
     RegisterRequest,
+    UpdateMyProfileRequest,
     UserResponse,
 )
 from app.application.commands import (
     LoginCommand,
     RegisterCommand,
+    UpdateMyProfileCommand,
 )
 from app.domain.exceptions import DomainError
-from app.infrastructure.di import get_login_handler, get_register_handler
+from app.infrastructure.di import get_login_handler, get_register_handler, get_update_my_profile_handler
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.persistence.repositories.user_repository import SqlAlchemyUserRepository
 
@@ -88,3 +90,33 @@ async def me(
         locale=user.locale,
         theme=user.theme,
     )
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    body: UpdateMyProfileRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        handler = get_update_my_profile_handler(session)
+        user = await handler.handle(
+            UpdateMyProfileCommand(
+                user_id=current_user.user_id,
+                full_name=body.full_name,
+                department=body.department,
+                current_password=body.current_password,
+                new_password=body.new_password,
+            )
+        )
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            role=user.role.value,
+            department=user.department,
+            locale=user.locale,
+            theme=user.theme,
+        )
+    except DomainError as e:
+        raise domain_exception_to_http(e) from e

@@ -15,6 +15,7 @@ const ERROR_KEY_MAP: [string | RegExp, string][] = [
   ['You can only edit your own bookings', 'errors.cannotEditOthersBooking'],
   ['Only admins can book on behalf of others', 'errors.adminOnly'],
   ['Admin access required', 'errors.adminRequired'],
+  ['Current password is incorrect', 'errors.wrongCurrentPassword'],
 ];
 
 export function translateApiError(message: string, t: (key: string) => string): string {

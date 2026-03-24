@@ -16,6 +16,9 @@ class UserRepository(ABC):
     async def find_by_id(self, user_id: UUID) -> User | None: ...
 
     @abstractmethod
+    async def find_by_calendar_token(self, token: str) -> User | None: ...
+
+    @abstractmethod
     async def save(self, user: User) -> User: ...
 
     @abstractmethod
@@ -78,6 +81,15 @@ class BookingRepository(ABC):
 
     @abstractmethod
     async def find_by_date(self, booking_date: date) -> list[Booking]: ...
+
+    @abstractmethod
+    async def find_by_date_range(
+        self,
+        date_from: date,
+        date_to: date,
+        resource_type: str | None = None,
+        user_id: UUID | None = None,
+    ) -> list[Booking]: ...
 
     @abstractmethod
     async def save(self, booking: Booking) -> Booking: ...

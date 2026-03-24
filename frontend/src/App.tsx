@@ -12,6 +12,7 @@ import { BookingsPage } from './pages/BookingsPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -73,6 +74,7 @@ export default function App() {
                   <Route path="/my-bookings" element={<MyBookingsPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                  <Route path="/profile" element={<ProfilePage />} />
                 </Route>
               </Routes>
             </BrowserRouter>

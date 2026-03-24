@@ -137,6 +137,32 @@ class SqlAlchemyBookingRepository(BookingRepository):
         )
         return [self._to_domain(m) for m in data_result.unique().scalars().all()], total
 
+    async def find_by_date_range(
+        self,
+        date_from: date,
+        date_to: date,
+        resource_type: str | None = None,
+        user_id: UUID | None = None,
+    ) -> list[Booking]:
+        query = (
+            select(BookingModel)
+            .outerjoin(BookingModel.resource)
+            .outerjoin(BookingModel.user)
+            .options(
+                contains_eager(BookingModel.resource),
+                contains_eager(BookingModel.user),
+            )
+            .where(BookingModel.booking_date >= date_from)
+            .where(BookingModel.booking_date <= date_to)
+        )
+        if user_id is not None:
+            query = query.where(BookingModel.user_id == user_id)
+        if resource_type is not None:
+            query = query.where(ResourceModel.resource_type == resource_type)
+        query = query.order_by(BookingModel.booking_date, BookingModel.start_time)
+        result = await self._session.execute(query)
+        return [self._to_domain(m) for m in result.unique().scalars().all()]
+
     async def find_by_date(self, booking_date: date) -> list[Booking]:
         result = await self._session.execute(
             self._query_with_joins()

@@ -27,6 +27,7 @@ class SqlAlchemyUserRepository(UserRepository):
             theme=model.theme or "system",
             is_active=model.is_active if model.is_active is not None else True,
             created_at=model.created_at,
+            calendar_token=model.calendar_token,
         )
 
     def _to_model(self, user: User) -> UserModel:
@@ -40,7 +41,15 @@ class SqlAlchemyUserRepository(UserRepository):
             locale=user.locale,
             theme=user.theme,
             is_active=user.is_active,
+            calendar_token=user.calendar_token,
         )
+
+    async def find_by_calendar_token(self, token: str) -> User | None:
+        result = await self._session.execute(
+            select(UserModel).where(UserModel.calendar_token == token)
+        )
+        model = result.scalar_one_or_none()
+        return self._to_domain(model) if model else None
 
     async def find_by_email(self, email: str) -> User | None:
         result = await self._session.execute(
@@ -76,6 +85,7 @@ class SqlAlchemyUserRepository(UserRepository):
             model.locale = user.locale
             model.theme = user.theme
             model.is_active = user.is_active
+            model.calendar_token = user.calendar_token
             await self._session.flush()
             return self._to_domain(model)
         return user

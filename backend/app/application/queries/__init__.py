@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from app.domain.entities import Booking, BrandSettings, Resource, User
+from app.domain.exceptions import UserNotFoundError
 from app.domain.ports import (
     BookingRepository,
     BookingStatsReader,
@@ -106,3 +107,38 @@ class GetMyBookingsPaginatedHandler:
             resource_type=query.resource_type,
             resource_name=query.resource_name,
         )
+
+
+@dataclass
+class GetCalendarFeedQuery:
+    token: str
+    feed_type: str  # "me" | "rooms" | "desks"
+    date_from: date
+    date_to: date
+
+
+class GetCalendarFeedHandler:
+    def __init__(self, user_repo: UserRepository, booking_repo: BookingRepository) -> None:
+        self._user_repo = user_repo
+        self._booking_repo = booking_repo
+
+    async def handle(self, query: GetCalendarFeedQuery) -> tuple[User, list[Booking]]:
+        user = await self._user_repo.find_by_calendar_token(query.token)
+        if user is None:
+            raise UserNotFoundError(query.token)
+
+        if query.feed_type == "me":
+            bookings = await self._booking_repo.find_by_date_range(
+                date_from=query.date_from,
+                date_to=query.date_to,
+                user_id=user.id,
+            )
+        else:
+            resource_type = "room" if query.feed_type == "rooms" else "desk"
+            bookings = await self._booking_repo.find_by_date_range(
+                date_from=query.date_from,
+                date_to=query.date_to,
+                resource_type=resource_type,
+            )
+
+        return user, bookings

@@ -43,15 +43,23 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {user && (
-            <Avatar name={user.full_name ?? user.email} email={user.email} />
-          )}
-          <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>{user?.full_name}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{user?.email}</div>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `sidebar-link${isActive ? ' active' : ''}`
+          }
+          style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)' }}
+        >
+          {user && <Avatar name={user.full_name ?? user.email} email={user.email} />}
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user?.full_name}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user?.email}
+            </div>
           </div>
-        </div>
+        </NavLink>
       </div>
     </aside>
   );

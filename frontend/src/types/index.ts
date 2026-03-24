@@ -96,3 +96,10 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export interface CalendarTokenResponse {
+  token: string;
+  me_url: string;
+  rooms_url: string;
+  desks_url: string;
+}

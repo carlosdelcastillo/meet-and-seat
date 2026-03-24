@@ -52,6 +52,20 @@ class UpdatePrefsRequest(BaseModel):
     theme: str | None = None
 
 
+class UpdateMyProfileRequest(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1)
+    department: str | None = None
+    current_password: str | None = None
+    new_password: str | None = Field(default=None, min_length=6)
+
+
+class CalendarTokenResponse(BaseModel):
+    token: str
+    me_url: str
+    rooms_url: str
+    desks_url: str
+
+
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)

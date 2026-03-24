@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.adapters.inbound.api.v1.routes import auth, bookings, brand, dashboard, resources, users
+from app.adapters.inbound.api.v1.routes import calendar
 from app.infrastructure.config import settings
 from app.infrastructure.persistence.database import async_session_factory, engine
 from app.infrastructure.persistence.orm_models import Base, resource_type_enum, user_role_enum
@@ -55,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router, prefix=prefix)
     app.include_router(brand.router, prefix=prefix)
     app.include_router(users.router, prefix=prefix)
+    app.include_router(calendar.router, prefix=prefix)
 
     return app
 

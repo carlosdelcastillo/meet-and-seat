@@ -8,3 +8,4 @@ pydantic[email]==2.12.5
 pydantic-settings==2.13.1
 python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
+icalendar==7.0.3

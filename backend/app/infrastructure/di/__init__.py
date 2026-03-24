@@ -8,10 +8,12 @@ from app.application.commands import (
     DeleteResourceHandler,
     DeleteUserBookingsHandler,
     DeleteUserHandler,
+    GenerateCalendarTokenHandler,
     LoginHandler,
     RegisterHandler,
     UpdateBrandHandler,
     UpdateBookingHandler,
+    UpdateMyProfileHandler,
     UpdateResourceHandler,
     UpdateUserHandler,
     UpdateUserPrefsHandler,
@@ -20,6 +22,7 @@ from app.application.queries import (
     GetBookingsByDateHandler,
     GetBookingsByResourceAndDateHandler,
     GetBrandHandler,
+    GetCalendarFeedHandler,
     GetDashboardHandler,
     GetMyBookingsPaginatedHandler,
     GetUserBookingsHandler,
@@ -178,5 +181,25 @@ def get_user_bookings_by_user_handler(session: AsyncSession) -> GetUserBookingsH
 
 def get_delete_user_bookings_handler(session: AsyncSession) -> DeleteUserBookingsHandler:
     return DeleteUserBookingsHandler(
+        booking_repo=SqlAlchemyBookingRepository(session),
+    )
+
+
+def get_update_my_profile_handler(session: AsyncSession) -> UpdateMyProfileHandler:
+    return UpdateMyProfileHandler(
+        user_repo=SqlAlchemyUserRepository(session),
+        password_hasher=_password_hasher,
+    )
+
+
+def get_generate_calendar_token_handler(session: AsyncSession) -> GenerateCalendarTokenHandler:
+    return GenerateCalendarTokenHandler(
+        user_repo=SqlAlchemyUserRepository(session),
+    )
+
+
+def get_calendar_feed_handler(session: AsyncSession) -> GetCalendarFeedHandler:
+    return GetCalendarFeedHandler(
+        user_repo=SqlAlchemyUserRepository(session),
         booking_repo=SqlAlchemyBookingRepository(session),
     )

@@ -26,6 +26,7 @@ class UserModel(Base):
     theme = Column(String(10), default="system")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    calendar_token = Column(String(64), unique=True, nullable=True, index=True)
 
     bookings = relationship("BookingModel", back_populates="user")
 
