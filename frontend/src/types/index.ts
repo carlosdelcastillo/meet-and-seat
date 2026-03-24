@@ -28,6 +28,7 @@ export interface User {
   locale: string;
   theme: string;
   is_active: boolean;
+  calendar_token: string | null;
 }
 
 export interface Resource {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Check, Copy, ExternalLink, HelpCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -60,6 +60,19 @@ export function ProfilePage() {
   const [generatingToken, setGeneratingToken] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    if (user?.calendar_token) {
+      const base = window.location.origin;
+      const prefix = `/api/v1/calendar/${user.calendar_token}`;
+      setCalendarUrls({
+        token: user.calendar_token,
+        me_url: `${base}${prefix}/me.ics`,
+        rooms_url: `${base}${prefix}/rooms.ics`,
+        desks_url: `${base}${prefix}/desks.ics`,
+      });
+    }
+  }, [user?.calendar_token]);
 
   if (!user) return null;
 

@@ -33,6 +33,10 @@
 
 ![Admin](docs/screenshots/05-admin.png)
 
+### Profile — personal data, password change, and calendar sync
+
+![Profile](docs/screenshots/06-profile.png)
+
 ---
 
 ## Features
@@ -41,10 +45,28 @@
 - **Weekly calendar view** with public holiday indicators (live from [OpenHolidays API](https://openholidaysapi.org))
 - **Admin panel** — manage resources, users, and branding from a single interface
 - **Analytics dashboard** — occupancy rate, peak hours, bookings by department, top users
+- **User profile** — edit name and department, change password, Gravatar photo support
+- **Calendar sync** — subscribe your bookings to Outlook, Google Calendar or Apple Calendar via iCal feed (read-only, ±12 months window)
 - **Multi-language** — Spanish, English, Catalan
 - **Light / dark / system theme**
 - **Gravatar support** with automatic initials fallback
 - **Fully containerised** — one command to run everything
+
+---
+
+## Calendar sync (iCal)
+
+Each user can generate personal iCal subscription URLs from their profile page. The feeds are read-only and cover a rolling ±12-month window.
+
+| Feed | URL | Contents |
+| --- | --- | --- |
+| My bookings | `/api/v1/calendar/{token}/me.ics` | Bookings made by the authenticated user |
+| Meeting rooms | `/api/v1/calendar/{token}/rooms.ics` | All room bookings across the organisation |
+| Desks | `/api/v1/calendar/{token}/desks.ics` | All desk bookings across the organisation |
+
+Tokens are permanent and scoped per user. They can be regenerated from the profile page at any time — regenerating invalidates the previous URLs.
+
+**Adding to Outlook 365 (web):** Calendar → Add calendar → Subscribe from web → paste URL.
 
 ---
 
@@ -59,6 +81,7 @@
 | ORM | SQLAlchemy 2 (async) |
 | Database | PostgreSQL 16 via asyncpg |
 | Auth | JWT (python-jose) + bcrypt |
+| Calendar | icalendar (iCal / RFC 5545) |
 | Architecture | Hexagonal (ports & adapters) |
 | Linting | Ruff · Bandit |
 | Tests | pytest-asyncio |
@@ -115,7 +138,7 @@ The database is seeded automatically on first run.
 ```bash
 cd backend
 python3.13 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Requires a running PostgreSQL instance
 export MAS_DATABASE_URL=postgresql+asyncpg://meetandseat:meetandseat@localhost:5432/meetandseat
@@ -154,7 +177,7 @@ meet-and-seat/
         ├── components/        # UI components by feature
         ├── hooks/             # Data-fetching hooks
         ├── pages/             # Route-level components
-        ├── utils/             # Dates, MD5, holidays
+        ├── utils/             # Dates, MD5, holidays, API errors
         └── i18n/              # es · en · ca translations
 ```
 
@@ -207,14 +230,16 @@ Domain logic has zero framework dependencies — it can be tested in isolation a
 ## Running Tests
 
 ```bash
-# Backend unit + integration tests
+# Backend — linting + security scan + tests
 cd backend
-pytest --cov=app
+ruff check .
+bandit -r app/ -q
+pytest tests/ -v
 
 # Frontend unit tests
 cd frontend
 npm test
 
-# E2E tests (requires running stack)
-npm run e2e
+# E2E tests (requires running stack at localhost)
+npx playwright test --reporter=list
 ```

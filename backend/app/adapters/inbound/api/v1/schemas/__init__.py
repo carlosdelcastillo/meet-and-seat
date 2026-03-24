@@ -43,6 +43,7 @@ class UserResponse(BaseModel):
     locale: str
     theme: str
     is_active: bool = True
+    calendar_token: str | None = None
 
     model_config = {"from_attributes": True}
 

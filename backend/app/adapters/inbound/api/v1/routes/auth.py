@@ -37,6 +37,7 @@ async def login(body: LoginRequest, session: AsyncSession = Depends(get_db)):
                 department=user.department,
                 locale=user.locale,
                 theme=user.theme,
+                calendar_token=user.calendar_token,
             ),
         )
     except DomainError as e:
@@ -65,6 +66,7 @@ async def register(body: RegisterRequest, session: AsyncSession = Depends(get_db
                 department=user.department,
                 locale=user.locale,
                 theme=user.theme,
+                calendar_token=user.calendar_token,
             ),
         )
     except DomainError as e:
@@ -89,6 +91,7 @@ async def me(
         department=user.department,
         locale=user.locale,
         theme=user.theme,
+        calendar_token=user.calendar_token,
     )
 
 
@@ -117,6 +120,7 @@ async def update_me(
             department=user.department,
             locale=user.locale,
             theme=user.theme,
+            calendar_token=user.calendar_token,
         )
     except DomainError as e:
         raise domain_exception_to_http(e) from e
