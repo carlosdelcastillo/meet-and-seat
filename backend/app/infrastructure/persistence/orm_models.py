@@ -1,12 +1,12 @@
 import uuid
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, String, Time, func
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import DeclarativeBase, relationship
 
 # Shared ENUM types — defined here so main.py can create them with checkfirst=True
 user_role_enum = Enum("admin", "user", name="user_role", create_type=False)
 resource_type_enum = Enum("room", "desk", name="resource_type", create_type=False)
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import DeclarativeBase, relationship
 
 
 class Base(DeclarativeBase):

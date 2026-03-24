@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { api } from '../api/client';
 import type { BrandSettings } from '../types';
 
@@ -43,8 +43,10 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     refreshBrand();
   }, [refreshBrand]);
 
+  const value = useMemo(() => ({ brand, refreshBrand }), [brand, refreshBrand]);
+
   return (
-    <BrandContext.Provider value={{ brand, refreshBrand }}>
+    <BrandContext.Provider value={value}>
       {children}
     </BrandContext.Provider>
   );

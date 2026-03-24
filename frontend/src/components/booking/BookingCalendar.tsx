@@ -224,7 +224,10 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
             <div
               key={resource.id}
               className={`card resource-card${isSelected ? ' selected' : ''}`}
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedResource(resource.id === selectedResource ? '' : resource.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedResource(resource.id === selectedResource ? '' : resource.id); }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                 <div>
@@ -254,7 +257,7 @@ export function BookingCalendar({ onNewBooking, refreshKey }: BookingCalendarPro
                 </button>
               </div>
 
-              <div onClick={e => e.stopPropagation()}>
+              <div onClick={e => e.stopPropagation()} role="presentation">
                 <BookingTimeline
                   bookings={resourceBookings}
                   onSlotClick={(hour, minute) => onNewBooking(resource.id, selectedDate, hour, minute)}

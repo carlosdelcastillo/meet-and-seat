@@ -54,9 +54,8 @@ export function useBookings() {
       if (params.resource_type) qs.set('resource_type', params.resource_type);
       if (params.resource_name) qs.set('resource_name', params.resource_name);
       const qstr = qs.toString();
-      const data = await api.get<PaginatedResponse<Booking>>(
-        `/bookings/mine${qstr ? `?${qstr}` : ''}`
-      );
+      const url = qstr ? `/bookings/mine?${qstr}` : '/bookings/mine';
+      const data = await api.get<PaginatedResponse<Booking>>(url);
       setBookings(data.items);
       setPaginatedMeta({
         total: data.total,
@@ -111,9 +110,8 @@ export function useBookings() {
       if (params.resource_type) qs.set('resource_type', params.resource_type);
       if (params.resource_name) qs.set('resource_name', params.resource_name);
       const qstr = qs.toString();
-      const data = await api.get<PaginatedResponse<Booking>>(
-        `/bookings/user/${userId}${qstr ? `?${qstr}` : ''}`
-      );
+      const url = qstr ? `/bookings/user/${userId}?${qstr}` : `/bookings/user/${userId}`;
+      const data = await api.get<PaginatedResponse<Booking>>(url);
       setBookings(data.items);
       setPaginatedMeta({
         total: data.total,

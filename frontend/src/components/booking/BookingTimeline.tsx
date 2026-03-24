@@ -26,6 +26,46 @@ function bookingAtSlot(bookings: Booking[], hour: number, minute: number): Booki
   return null;
 }
 
+function SlotCell({
+  bookings,
+  hour,
+  minute,
+  onSlotClick,
+  onBookingClick,
+  availableLabel,
+}: {
+  bookings: Booking[];
+  hour: number;
+  minute: number;
+  onSlotClick?: (hour: number, minute: number) => void;
+  onBookingClick?: (booking: Booking) => void;
+  availableLabel: string;
+}) {
+  const booking = bookingAtSlot(bookings, hour, minute);
+  const slotLabel = formatSlotTime(hour, minute);
+  const purposeSuffix = booking?.purpose ? ` · ${booking.purpose}` : '';
+  const title = booking
+    ? `${booking.start_time.slice(0, 5)}–${booking.end_time.slice(0, 5)} · ${booking.user_name}${purposeSuffix}`
+    : `${slotLabel} — ${availableLabel}`;
+
+  const handleClick = () => {
+    if (booking) {
+      onBookingClick?.(booking);
+    } else {
+      onSlotClick?.(hour, minute);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      className={`timeline-quarter${booking ? ' occupied' : ' available'}`}
+      title={title}
+      onClick={handleClick}
+    />
+  );
+}
+
 export function BookingTimeline({ bookings, onSlotClick, onBookingClick }: BookingTimelineProps) {
   const { t } = useTranslation();
 
@@ -34,32 +74,23 @@ export function BookingTimeline({ bookings, onSlotClick, onBookingClick }: Booki
 
   return (
     <div className="timeline-grid">
-      {rows.map((rowHours, rowIdx) => (
-        <div key={rowIdx} className="timeline-row">
+      {rows.map(rowHours => (
+        <div key={rowHours[0]} className="timeline-row">
           {rowHours.map(hour => (
             <div key={hour} className="timeline-hour-block">
               <div className="timeline-hour-label">{String(hour).padStart(2, '0')}h</div>
               <div className="timeline-quarters">
-                {QUARTERS.map(minute => {
-                  const booking = bookingAtSlot(bookings, hour, minute);
-                  const slotLabel = formatSlotTime(hour, minute);
-                  return (
-                    <div
-                      key={minute}
-                      className={`timeline-quarter${booking ? ' occupied' : ' available'}`}
-                      title={booking
-                        ? `${booking.start_time.slice(0, 5)}–${booking.end_time.slice(0, 5)} · ${booking.user_name}${booking.purpose ? ` · ${booking.purpose}` : ''}`
-                        : `${slotLabel} — ${t('booking.available')}`}
-                      onClick={() => {
-                        if (booking) {
-                          onBookingClick?.(booking);
-                        } else {
-                          onSlotClick?.(hour, minute);
-                        }
-                      }}
-                    />
-                  );
-                })}
+                {QUARTERS.map(minute => (
+                  <SlotCell
+                    key={minute}
+                    bookings={bookings}
+                    hour={hour}
+                    minute={minute}
+                    onSlotClick={onSlotClick}
+                    onBookingClick={onBookingClick}
+                    availableLabel={t('booking.available')}
+                  />
+                ))}
               </div>
             </div>
           ))}

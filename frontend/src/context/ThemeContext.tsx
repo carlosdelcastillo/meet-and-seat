@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { api } from '../api/client';
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -60,8 +60,10 @@ export function ThemeProvider({ children, initialTheme = 'system' }: { children:
     return () => mq.removeEventListener('change', handler);
   }, [theme, applyTheme]);
 
+  const value = useMemo(() => ({ theme, resolvedTheme, setTheme }), [theme, resolvedTheme, setTheme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

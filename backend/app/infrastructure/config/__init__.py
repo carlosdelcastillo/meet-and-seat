@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://meetandseat:meetandseat@localhost:5432/meetandseat"
+    database_url: str
     secret_key: str = "dev-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
     jwt_expiration_hours: int = 8

@@ -19,8 +19,8 @@ export function TopUsersTable({ data }: Props) {
           </tr>
         </thead>
         <tbody>
-          {data.map((user, idx) => (
-            <tr key={idx}>
+          {data.map(user => (
+            <tr key={user.name}>
               <td style={{ fontWeight: 500 }}>{user.name}</td>
               <td style={{ color: 'var(--color-text-secondary)' }}>{user.department}</td>
               <td style={{ textAlign: 'right', fontWeight: 600 }}>{user.count}</td>

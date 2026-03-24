@@ -398,35 +398,34 @@ class UpdateBookingHandler:
     def __init__(self, booking_repo: BookingRepository) -> None:
         self._booking_repo = booking_repo
 
+    def _apply_fields(self, booking: Booking, command: UpdateBookingCommand) -> None:
+        if command.booking_date is not None:
+            if command.booking_date < date.today():
+                raise PastDateError
+            booking.booking_date = command.booking_date
+        if command.start_time is not None or command.end_time is not None:
+            new_start = command.start_time if command.start_time is not None else booking.time_slot.start
+            new_end = command.end_time if command.end_time is not None else booking.time_slot.end
+            booking.time_slot = TimeSlot(start=new_start, end=new_end)
+        if command.purpose is not None:
+            booking.purpose = command.purpose
+
+    async def _check_conflicts(self, booking: Booking) -> None:
+        existing = await self._booking_repo.find_by_resource_and_date(
+            booking.resource_id, booking.booking_date
+        )
+        for other in existing:
+            if other.id != booking.id and booking.conflicts_with(other):
+                raise BookingConflictError
+
     async def handle(self, command: UpdateBookingCommand) -> Booking:
         booking = await self._booking_repo.find_by_id(command.booking_id)
         if booking is None:
             raise BookingNotFoundError(str(command.booking_id))
         if booking.user_id != command.user_id and not command.is_admin:
             raise PermissionDeniedError("You can only edit your own bookings")
-
-        if command.booking_date is not None:
-            if command.booking_date < date.today():
-                raise PastDateError
-            booking.booking_date = command.booking_date
-
-        if command.start_time is not None or command.end_time is not None:
-            new_start = command.start_time if command.start_time is not None else booking.time_slot.start
-            new_end = command.end_time if command.end_time is not None else booking.time_slot.end
-            booking.time_slot = TimeSlot(start=new_start, end=new_end)
-
-        if command.purpose is not None:
-            booking.purpose = command.purpose
-
-        existing = await self._booking_repo.find_by_resource_and_date(
-            booking.resource_id, booking.booking_date
-        )
-        for other in existing:
-            if other.id == booking.id:
-                continue
-            if booking.conflicts_with(other):
-                raise BookingConflictError
-
+        self._apply_fields(booking, command)
+        await self._check_conflicts(booking)
         return await self._booking_repo.update(booking)
 
 

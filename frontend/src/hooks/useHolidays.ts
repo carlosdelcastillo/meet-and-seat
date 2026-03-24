@@ -9,7 +9,7 @@ export function useHolidays(yearMonths: string[]): Holiday[] {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   const yearsKey = [...new Set(yearMonths.map(ym => ym.slice(0, 4)))]
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .join(',');
 
   useEffect(() => {

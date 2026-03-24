@@ -22,8 +22,8 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={t('profile.tutorialTitle')} onClose={onClose}>
       <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {steps.map((step, i) => (
-          <li key={i} style={{ fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--color-text)' }}>
+        {steps.map((step) => (
+          <li key={step} style={{ fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--color-text)' }}>
             {step}
           </li>
         ))}

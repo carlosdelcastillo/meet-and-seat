@@ -97,7 +97,7 @@ export function LoginPage() {
           {error && <div data-testid="login-error" style={{ color: 'var(--color-danger)', fontSize: '0.875rem' }}>{error}</div>}
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-            {loading ? t('common.loading') : isRegister ? t('auth.register') : t('auth.login')}
+            {loading ? t('common.loading') : (isRegister ? t('auth.register') : t('auth.login'))}
           </button>
         </form>
 

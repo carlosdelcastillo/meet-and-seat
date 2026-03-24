@@ -74,7 +74,7 @@ export function MyBookingsPage() {
     try {
       await deleteBooking(id);
       showToast(t('booking.deleted'));
-      selectedUserId ? fetchByUser(selectedUserId, params) : fetchMine(params);
+      if (selectedUserId) { fetchByUser(selectedUserId, params); } else { fetchMine(params); }
     } catch (err) {
       showToast(err instanceof Error ? translateApiError(err.message, t) : t('common.error'), 'error');
     }
@@ -97,7 +97,7 @@ export function MyBookingsPage() {
     if (!editingBooking) return;
     await updateBooking(editingBooking.id, data);
     showToast(t('booking.updated'));
-    selectedUserId ? fetchByUser(selectedUserId, params) : fetchMine(params);
+    if (selectedUserId) { fetchByUser(selectedUserId, params); } else { fetchMine(params); }
   };
 
   const setFilter = (patch: Partial<MyBookingsParams>) =>

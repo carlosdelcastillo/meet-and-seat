@@ -58,7 +58,10 @@ export function BookingForm({
   const isEdit = !!editBooking;
 
   const defaultStart = editBooking ? editBooking.start_time.slice(0, 5) : (initialStartTime || '09:00');
-  const defaultEnd = editBooking ? editBooking.end_time.slice(0, 5) : (initialStartTime ? addMinutes(initialStartTime, 60) : '19:00');
+  let defaultEnd: string;
+  if (editBooking) { defaultEnd = editBooking.end_time.slice(0, 5); }
+  else if (initialStartTime) { defaultEnd = addMinutes(initialStartTime, 60); }
+  else { defaultEnd = '19:00'; }
   const [resourceId, setResourceId] = useState(editBooking?.resource_id ?? initialResourceId);
   const [resourceSearch, setResourceSearch] = useState('');
   const [showResourceDropdown, setShowResourceDropdown] = useState(false);
@@ -82,7 +85,7 @@ export function BookingForm({
   useEffect(() => {
     if (resourceId) {
       const r = resources.find(res => res.id === resourceId);
-      if (r) setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+      if (r) setResourceSearch(`${r.name} (${t('booking.' + r.resource_type)})`);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -95,7 +98,7 @@ export function BookingForm({
         // Restore label if a resource is already selected
         if (resourceId) {
           const r = resources.find(res => res.id === resourceId);
-          if (r) setResourceSearch(`${r.name} (${t(`booking.${r.resource_type}`)})`);
+          if (r) setResourceSearch(`${r.name} (${t('booking.' + r.resource_type)})`);
         }
       }
     };
@@ -272,7 +275,7 @@ export function BookingForm({
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? t('common.loading') : isEdit ? t('common.save') : t('common.create')}
+            {loading ? t('common.loading') : (isEdit ? t('common.save') : t('common.create'))}
           </button>
         </div>
       </form>

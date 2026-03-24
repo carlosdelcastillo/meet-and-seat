@@ -54,10 +54,12 @@ describe('BookingForm', () => {
       />
     );
 
-    const select = screen.getAllByRole('combobox')[0];
-    expect(select).toBeTruthy();
-    const options = select.querySelectorAll('option');
-    expect(options.length).toBe(2); // placeholder + 1 resource
+    // Resource selector is a searchable text input with a custom dropdown
+    const resourceInput = screen.getByPlaceholderText('Select a resource');
+    expect(resourceInput).toBeTruthy();
+    fireEvent.focus(resourceInput);
+    const options = screen.getAllByRole('option');
+    expect(options.length).toBe(1); // 1 resource in the dropdown
   });
 
   it('calls onClose when cancel is clicked', () => {

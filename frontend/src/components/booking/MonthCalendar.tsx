@@ -112,7 +112,8 @@ export function MonthCalendar({
             const holidayTitle = dayHolidays.map(formatHoliday).join(', ');
 
             return (
-              <div
+              <button
+                type="button"
                 key={`${wi}-${di}`}
                 className={[
                   'month-cal-day',
@@ -126,7 +127,7 @@ export function MonthCalendar({
               >
                 <span className="month-cal-day-num">{day}</span>
                 {hasHoliday && <span className="holiday-dot" title={holidayTitle} />}
-              </div>
+              </button>
             );
           })
         )}

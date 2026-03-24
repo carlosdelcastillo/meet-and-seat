@@ -1,3 +1,10 @@
+function md5Round(j: number, B: number, C: number, D: number): [number, number] {
+  if (j < 16) return [(B & C) | (~B & D), j];
+  if (j < 32) return [(D & B) | (~D & C), (5 * j + 1) % 16];
+  if (j < 48) return [B ^ C ^ D,          (3 * j + 5) % 16];
+  return             [C ^ (B | ~D),        (7 * j) % 16];
+}
+
 /** Compact MD5 implementation for Gravatar URL generation */
 export function md5hex(input: string): string {
   const str = unescape(encodeURIComponent(input));
@@ -32,14 +39,10 @@ export function md5hex(input: string): string {
     }
     let A = a0, B = b0, C = c0, D = d0;
     for (let j = 0; j < 64; j++) {
-      let F: number, g: number;
-      if (j < 16)      { F = (B & C) | (~B & D); g = j; }
-      else if (j < 32) { F = (D & B) | (~D & C); g = (5*j+1) % 16; }
-      else if (j < 48) { F = B ^ C ^ D;           g = (3*j+5) % 16; }
-      else             { F = C ^ (B | ~D);         g = (7*j) % 16; }
-      F = (F + A + K[j] + M[g]) >>> 0;
+      const [F, g] = md5Round(j, B, C, D);
+      const T = (F + A + K[j] + M[g]) >>> 0;
       A = D; D = C; C = B;
-      B = (B + ((F << S[j]) | (F >>> (32 - S[j])))) >>> 0;
+      B = (B + ((T << S[j]) | (T >>> (32 - S[j])))) >>> 0;
     }
     a0 = (a0 + A) >>> 0; b0 = (b0 + B) >>> 0;
     c0 = (c0 + C) >>> 0; d0 = (d0 + D) >>> 0;

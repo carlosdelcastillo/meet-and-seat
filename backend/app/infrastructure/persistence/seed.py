@@ -27,6 +27,78 @@ def _load_data() -> dict:
         return json.load(f)
 
 
+_TIME_SLOTS = [
+    (time(8, 0),  time(9, 0)),
+    (time(9, 0),  time(10, 0)),
+    (time(10, 0), time(11, 0)),
+    (time(11, 0), time(12, 0)),
+    (time(12, 0), time(13, 0)),
+    (time(14, 0), time(15, 0)),
+    (time(15, 0), time(16, 0)),
+    (time(16, 0), time(17, 0)),
+    (time(17, 0), time(18, 0)),
+]
+
+
+def _generate_sample_bookings(
+    data: dict,
+    all_user_ids: list,
+    all_resource_ids: list,
+) -> list[BookingModel]:
+    purposes = data["booking_purposes"]
+    today = date.today()
+    used_slots: dict[tuple, set[int]] = {}
+    used_user_resource_date: set[tuple] = set()
+    bookings: list[BookingModel] = []
+
+    for day_offset in range(-10, 11):
+        booking_date = today + timedelta(days=day_offset)
+        if booking_date.weekday() >= 5:
+            continue
+        _fill_day_bookings(
+            booking_date, all_user_ids, all_resource_ids, purposes,
+            used_slots, used_user_resource_date, bookings,
+        )
+        if len(bookings) >= 50:
+            break
+
+    return bookings
+
+
+def _fill_day_bookings(
+    booking_date: date,
+    all_user_ids: list,
+    all_resource_ids: list,
+    purposes: list,
+    used_slots: dict,
+    used_user_resource_date: set,
+    bookings: list[BookingModel],
+) -> None:
+    for _ in range(random.randint(2, 5)):  # nosec B311
+        if len(bookings) >= 50:
+            break
+        uid = random.choice(all_user_ids)  # nosec B311
+        rid = random.choice(all_resource_ids)  # nosec B311
+        slot_idx = random.randint(0, len(_TIME_SLOTS) - 1)  # nosec B311
+        key_res = (str(rid), str(booking_date))
+        key_user = (str(uid), str(rid), str(booking_date))
+        used_slots.setdefault(key_res, set())
+        if slot_idx in used_slots[key_res] or key_user in used_user_resource_date:
+            continue
+        used_slots[key_res].add(slot_idx)
+        used_user_resource_date.add(key_user)
+        start_t, end_t = _TIME_SLOTS[slot_idx]
+        bookings.append(BookingModel(
+            id=uuid.uuid4(),
+            resource_id=rid,
+            user_id=uid,
+            booking_date=booking_date,
+            start_time=start_t,
+            end_time=end_t,
+            purpose=random.choice(purposes),  # nosec B311
+        ))
+
+
 async def seed_data(session: AsyncSession) -> None:
     existing = await session.execute(select(UserModel).limit(1))
     if existing.scalar_one_or_none() is not None:
@@ -118,56 +190,10 @@ async def seed_data(session: AsyncSession) -> None:
     await session.flush()
 
     # ── Sample bookings ───────────────────────────────────────────────────────
-    all_user_ids = [admin_id] + user_ids
-    all_resource_ids = room_ids + desk_ids
-    purposes = data["booking_purposes"]
-    today = date.today()
-    time_slots = [
-        (time(8, 0),  time(9, 0)),
-        (time(9, 0),  time(10, 0)),
-        (time(10, 0), time(11, 0)),
-        (time(11, 0), time(12, 0)),
-        (time(12, 0), time(13, 0)),
-        (time(14, 0), time(15, 0)),
-        (time(15, 0), time(16, 0)),
-        (time(16, 0), time(17, 0)),
-        (time(17, 0), time(18, 0)),
-    ]
-
-    used_slots: dict[tuple, set[int]] = {}
-    used_user_resource_date: set[tuple] = set()
-    booking_count = 0
-
-    for day_offset in range(-10, 11):
-        booking_date = today + timedelta(days=day_offset)
-        if booking_date.weekday() >= 5:
-            continue
-        for _ in range(random.randint(2, 5)):  # nosec B311
-            if booking_count >= 50:
-                break
-            uid = random.choice(all_user_ids)  # nosec B311
-            rid = random.choice(all_resource_ids)  # nosec B311
-            slot_idx = random.randint(0, len(time_slots) - 1)  # nosec B311
-            key_res = (str(rid), str(booking_date))
-            key_user = (str(uid), str(rid), str(booking_date))
-            if key_res not in used_slots:
-                used_slots[key_res] = set()
-            if slot_idx in used_slots[key_res] or key_user in used_user_resource_date:
-                continue
-            used_slots[key_res].add(slot_idx)
-            used_user_resource_date.add(key_user)
-            start_t, end_t = time_slots[slot_idx]
-            session.add(BookingModel(
-                id=uuid.uuid4(),
-                resource_id=rid,
-                user_id=uid,
-                booking_date=booking_date,
-                start_time=start_t,
-                end_time=end_t,
-                purpose=random.choice(purposes),  # nosec B311
-            ))
-            booking_count += 1
-        if booking_count >= 50:
-            break
+    bookings = _generate_sample_bookings(
+        data, [admin_id] + user_ids, room_ids + desk_ids
+    )
+    for b in bookings:
+        session.add(b)
 
     await session.flush()

@@ -9,6 +9,12 @@ interface ToastMessage {
 let toastId = 0;
 const listeners: Array<(toast: ToastMessage) => void> = [];
 
+// Returns a state-updater function that removes the toast with the given id.
+// Defined at module level to avoid deep nesting inside the component.
+function exclude(id: number): (toasts: ToastMessage[]) => ToastMessage[] {
+  return toasts => toasts.filter(t => t.id !== id);
+}
+
 export function showToast(text: string, type: 'success' | 'error' = 'success') {
   const toast: ToastMessage = { id: ++toastId, text, type };
   listeners.forEach(fn => fn(toast));
@@ -20,9 +26,7 @@ export function ToastContainer() {
   useEffect(() => {
     const handler = (toast: ToastMessage) => {
       setToasts(prev => [...prev, toast]);
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== toast.id));
-      }, 3000);
+      setTimeout(setToasts, 3000, exclude(toast.id));
     };
     listeners.push(handler);
     return () => {

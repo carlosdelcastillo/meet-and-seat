@@ -29,7 +29,6 @@ from app.infrastructure.di import (
     get_delete_user_bookings_handler,
     get_my_bookings_paginated_handler,
     get_update_booking_handler,
-    get_user_bookings_by_user_handler,
 )
 from app.infrastructure.persistence.database import get_db
 

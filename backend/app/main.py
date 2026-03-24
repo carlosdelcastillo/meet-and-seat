@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from app.adapters.inbound.api.v1.routes import auth, bookings, brand, dashboard, resources, users
@@ -13,12 +14,22 @@ from app.infrastructure.persistence.orm_models import Base, resource_type_enum, 
 from app.infrastructure.persistence.seed import seed_data
 
 
+_INIT_LOCK_ID = 987654321  # Arbitrary stable integer for pg_advisory_lock
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Serialize schema initialisation across Gunicorn workers. Without this,
+    # multiple workers start simultaneously, all find the tables absent, and
+    # race to create them — causing UniqueViolationError in pg_type.
     async with engine.begin() as conn:
-        await conn.run_sync(lambda c: user_role_enum.create(c, checkfirst=True))
-        await conn.run_sync(lambda c: resource_type_enum.create(c, checkfirst=True))
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text(f"SELECT pg_advisory_lock({_INIT_LOCK_ID})"))
+        try:
+            await conn.run_sync(lambda c: user_role_enum.create(c, checkfirst=True))
+            await conn.run_sync(lambda c: resource_type_enum.create(c, checkfirst=True))
+            await conn.run_sync(Base.metadata.create_all)
+        finally:
+            await conn.execute(text(f"SELECT pg_advisory_unlock({_INIT_LOCK_ID})"))
     async with async_session_factory() as session:
         try:
             await seed_data(session)
