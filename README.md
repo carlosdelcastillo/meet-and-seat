@@ -9,6 +9,19 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)
 
+
+<div align="center">
+
+### 🌐 [Try the live demo](https://demo-meet-and-seat.carlosdelcastillo.dev/)
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@meetandseat.com` | `Admin123!` |
+| User | `ana.garcia@meetandseat.com` | `User123!` |
+
+</div>
+
+
 ---
 
 ## Screenshots
@@ -102,14 +115,25 @@ Tokens are permanent and scoped per user. They can be regenerated from the profi
 
 ## Getting Started
 
-### Prerequisites
+### Try the live demo
+
+No setup needed — just open it:
+
+**[https://demo-meet-and-seat.carlosdelcastillo.dev](https://demo-meet-and-seat.carlosdelcastillo.dev/)**
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@meetandseat.com` | `Admin123!` |
+| User | `ana.garcia@meetandseat.com` | `User123!` |
+
+### Run it yourself
+
+#### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
 
-### Run with Docker
-
 ```bash
-git clone https://github.com/YOUR_USERNAME/meet-and-seat.git
+git clone https://github.com/carlosdelcastillo/meet-and-seat.git
 cd meet-and-seat
 docker compose up --build
 ```
@@ -120,14 +144,7 @@ docker compose up --build
 | Backend API | http://localhost:8000 |
 | API docs | http://localhost:8000/docs |
 
-The database is seeded automatically on first run.
-
-### Default credentials
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@meetandseat.com` | `Admin123!` |
-| User | `ana.garcia@meetandseat.com` | `User123!` |
+The database is seeded automatically on first run with the same demo credentials listed above.
 
 ---
 
