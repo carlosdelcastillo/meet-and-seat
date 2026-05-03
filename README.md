@@ -9,19 +9,6 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)
 
-
-<div align="center">
-
-### 🌐 [Try the live demo](https://demo-meet-and-seat.carlosdelcastillo.dev/)
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@meetandseat.com` | `Admin123!` |
-| User | `ana.garcia@meetandseat.com` | `User123!` |
-
-</div>
-
-
 ---
 
 ## Screenshots
@@ -115,22 +102,9 @@ Tokens are permanent and scoped per user. They can be regenerated from the profi
 
 ## Getting Started
 
-### Try the live demo
+### Quick start (demo / local testing)
 
-No setup needed — just open it:
-
-**[https://demo-meet-and-seat.carlosdelcastillo.dev](https://demo-meet-and-seat.carlosdelcastillo.dev/)**
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@meetandseat.com` | `Admin123!` |
-| User | `ana.garcia@meetandseat.com` | `User123!` |
-
-### Run it yourself
-
-#### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+The only prerequisite is [Docker](https://docs.docker.com/get-docker/) with Docker Compose.
 
 ```bash
 git clone https://github.com/carlosdelcastillo/meet-and-seat.git
@@ -138,17 +112,118 @@ cd meet-and-seat
 docker compose up --build
 ```
 
+Once the containers are up, open <http://localhost> and log in with one of these accounts:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@meetandseat.com` | `Admin123!` |
+| User | `ana.garcia@meetandseat.com` | `User123!` |
+
+The database seeds demo data automatically on first run — no extra steps needed. This includes
+1 admin, 8 regular users, 5 meeting rooms, 5 desks, and ~50 sample bookings spread across the
+current week.
+
 | Service | URL |
 | --- | --- |
-| Frontend | http://localhost |
-| Backend API | http://localhost:8000 |
-| API docs | http://localhost:8000/docs |
+| Frontend | <http://localhost> |
+| Backend API | <http://localhost:8000> |
+| Interactive API docs | <http://localhost:8000/docs> |
 
-The database is seeded automatically on first run with the same demo credentials listed above.
+> **Note:** The bundled `docker-compose.yml` is intentionally configured for convenience — it uses
+> a local PostgreSQL container and a placeholder secret key. **Do not use it in production.**
 
 ---
 
-### Local Development
+### Production deployment
+
+The recommended production setup separates the application tier from the database and terminates
+TLS at the edge.
+
+#### Infrastructure overview
+
+- **Database** — Use a managed PostgreSQL service (AWS RDS, Supabase, Neon, Railway Postgres, etc.).
+  Do not run PostgreSQL as a container on the same host as the application.
+- **Backend** — Deploy the `backend/` image to any container platform (Fly.io, Railway, Render,
+  AWS ECS, GKE, etc.) with at least one replica. The image already uses Gunicorn with multiple
+  workers (`MAS_WORKERS`).
+- **Frontend** — The `frontend/` image builds a static bundle served by Nginx. Put a CDN
+  (Cloudflare, AWS CloudFront) in front of it for best performance.
+- **HTTPS** — Terminate TLS at the edge (Cloudflare Proxy, a load balancer, or a self-hosted
+  reverse proxy such as Caddy or Traefik with automatic Let's Encrypt certificates). Never expose
+  the backend directly on port 8000.
+
+#### Required secrets
+
+Set these in your deployment platform's secret store — never commit them:
+
+| Variable | Production value |
+| --- | --- |
+| `MAS_SECRET_KEY` | Random 64-byte hex string: `openssl rand -hex 64` |
+| `MAS_DATABASE_URL` | Connection string to your managed PostgreSQL instance |
+| `MAS_CORS_ORIGINS` | Your frontend origin, e.g. `https://meetandseat.example.com` |
+| `BACKEND_URL` | Internal URL the Nginx frontend uses to proxy `/api` requests |
+
+#### Minimal single-server setup (VPS / on-premise)
+
+For a low-cost single-server deployment, override Compose with a production file and add Caddy for
+automatic HTTPS:
+
+```yaml
+# docker-compose.prod.yml — adapt to your environment
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: meetandseat
+      POSTGRES_USER: meetandseat
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: [db]
+    environment:
+      MAS_DATABASE_URL: postgresql+asyncpg://meetandseat:${DB_PASSWORD}@db:5432/meetandseat
+      MAS_SECRET_KEY: ${SECRET_KEY}
+      MAS_CORS_ORIGINS: https://meetandseat.example.com
+      MAS_WORKERS: 4
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on: [frontend, backend]
+
+volumes:
+  pgdata:
+  caddy_data:
+```
+
+```text
+# Caddyfile
+meetandseat.example.com {
+    reverse_proxy frontend:80
+}
+```
+
+Store `DB_PASSWORD` and `SECRET_KEY` in a `.env` file that is **not** committed to version control,
+and pass it with `docker compose --env-file .env.prod -f docker-compose.prod.yml up -d`.
+
+---
+
+### Local development
 
 #### Backend development
 
